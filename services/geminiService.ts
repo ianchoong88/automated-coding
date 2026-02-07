@@ -18,7 +18,7 @@ export const extractContactFromImages = async (base64Images: string[]): Promise<
       parts: [
         ...imageParts,
         {
-          text: "You are provided with one or more images of a business card (e.g., front and back). Extract all contact details and synthesize them into a single comprehensive JSON object. Be thorough and merge information if it spans multiple sides. Format as a single JSON object. If a field is not found, leave it as an empty string.",
+          text: "You are provided with one or more images of a business card. Extract all contact details. Additionally, detect the bounding box of the main company logo and the person's portrait photo if they are visible. Use normalized coordinates [0-1000] for ymin, xmin, ymax, xmax. Specify the 'imageIndex' (0 for the first image, 1 for the second, etc.) where each graphic is located. Synthesize all information into a single JSON object.",
         },
       ],
     },
@@ -42,6 +42,26 @@ export const extractContactFromImages = async (base64Images: string[]): Promise<
           zipCode: { type: Type.STRING },
           country: { type: Type.STRING },
           notes: { type: Type.STRING },
+          logoBox: {
+            type: Type.OBJECT,
+            properties: {
+              ymin: { type: Type.NUMBER },
+              xmin: { type: Type.NUMBER },
+              ymax: { type: Type.NUMBER },
+              xmax: { type: Type.NUMBER },
+              imageIndex: { type: Type.NUMBER }
+            }
+          },
+          photoBox: {
+            type: Type.OBJECT,
+            properties: {
+              ymin: { type: Type.NUMBER },
+              xmin: { type: Type.NUMBER },
+              ymax: { type: Type.NUMBER },
+              xmax: { type: Type.NUMBER },
+              imageIndex: { type: Type.NUMBER }
+            }
+          }
         },
         required: ["fullName"],
       },

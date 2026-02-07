@@ -1,6 +1,7 @@
+
 {
-  "name": "Business Card Scanner",
-  "description": "A professional business card scanner that uses Gemini 3 Flash to extract contact details from photos and generate downloadable vCard files.",
+  "name": "Business Card to Contacts Scanner",
+  "description": "A professional business card scanner that uses Gemini 3 Flash to extract contact details and graphics (logos/photos) from photos and generate downloadable vCard files.",
   "requestFramePermissions": [
     "camera"
   ]

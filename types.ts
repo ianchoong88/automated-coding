@@ -1,4 +1,12 @@
 
+export interface GraphicBox {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  imageIndex: number;
+}
+
 export interface ContactInfo {
   firstName?: string;
   lastName?: string;
@@ -15,6 +23,11 @@ export interface ContactInfo {
   zipCode?: string;
   country?: string;
   notes?: string;
+  // Graphics
+  logo?: string; // base64 encoded string
+  photo?: string; // base64 encoded string
+  logoBox?: GraphicBox;
+  photoBox?: GraphicBox;
 }
 
 export interface ExtractionResponse {

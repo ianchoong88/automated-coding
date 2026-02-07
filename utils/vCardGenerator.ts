@@ -15,8 +15,21 @@ export const generateVCard = (contact: ContactInfo): string => {
     contact.website ? `URL:${contact.website}` : '',
     contact.address || contact.city ? `ADR;TYPE=WORK:;;${contact.address || ''};${contact.city || ''};${contact.state || ''};${contact.zipCode || ''};${contact.country || ''}` : '',
     contact.notes ? `NOTE:${contact.notes}` : '',
-    'END:VCARD'
   ];
+
+  // Add Portrait Photo if available
+  if (contact.photo) {
+    const photoData = contact.photo.split(',')[1];
+    vCardLines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${photoData}`);
+  }
+
+  // Add Logo if available
+  if (contact.logo) {
+    const logoData = contact.logo.split(',')[1];
+    vCardLines.push(`LOGO;ENCODING=b;TYPE=JPEG:${logoData}`);
+  }
+
+  vCardLines.push('END:VCARD');
 
   return vCardLines.filter(line => line.trim() !== '').join('\n');
 };

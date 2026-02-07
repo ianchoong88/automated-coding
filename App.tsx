@@ -3,8 +3,34 @@ import React, { useState } from 'react';
 import { Layout } from './components/Layout';
 import { ImageUpload } from './components/ImageUpload';
 import { ContactEditor } from './components/ContactEditor';
-import { ContactInfo } from './types';
+import { ContactInfo, GraphicBox } from './types';
 import { extractContactFromImages } from './services/geminiService';
+
+export const cropImage = (base64: string, box: GraphicBox): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve('');
+
+      const x = (box.xmin / 1000) * img.width;
+      const y = (box.ymin / 1000) * img.height;
+      const w = ((box.xmax - box.xmin) / 1000) * img.width;
+      const h = ((box.ymax - box.ymin) / 1000) * img.height;
+
+      if (w <= 0 || h <= 0) return resolve('');
+
+      const scale = Math.min(400 / Math.max(w, h), 1);
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+
+      ctx.drawImage(img, x, y, w, h, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = base64;
+  });
+};
 
 const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -19,6 +45,14 @@ const App: React.FC = () => {
     
     try {
       const data = await extractContactFromImages(images);
+      
+      if (data.logoBox && images[data.logoBox.imageIndex]) {
+        data.logo = await cropImage(images[data.logoBox.imageIndex], data.logoBox);
+      }
+      if (data.photoBox && images[data.photoBox.imageIndex]) {
+        data.photo = await cropImage(images[data.photoBox.imageIndex], data.photoBox);
+      }
+
       setExtractedData(data);
     } catch (err: any) {
       setError(err.message || 'Failed to extract data. Please try clearer photos.');
@@ -55,11 +89,11 @@ const App: React.FC = () => {
             <div className="space-y-2">
               <h3 className="text-2xl font-bold text-slate-800">Synthesizing Contact...</h3>
               <p className="text-slate-500 max-w-sm mx-auto">
-                Gemini is merging data from {previewImages.length} {previewImages.length === 1 ? 'photo' : 'photos'} to create a complete profile.
+                Gemini is merging text and graphics from {previewImages.length} {previewImages.length === 1 ? 'photo' : 'photos'}.
               </p>
             </div>
-            <div className="w-64 bg-slate-100 rounded-full h-2 overflow-hidden">
-              <div className="bg-blue-600 h-full w-full animate-[shimmer_2s_infinite_linear]"></div>
+            <div className="w-64 bg-slate-100 rounded-full h-2 overflow-hidden relative">
+              <div className="bg-blue-600 h-full w-1/3 absolute animate-shimmer"></div>
             </div>
           </div>
         )}
@@ -82,6 +116,7 @@ const App: React.FC = () => {
         {extractedData && !isProcessing && (
           <ContactEditor 
             initialData={extractedData} 
+            sourceImages={previewImages}
             onReset={handleReset} 
           />
         )}
@@ -91,11 +126,11 @@ const App: React.FC = () => {
             <div className="text-center p-4">
               <div className="text-blue-600 mb-3 flex justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h4 className="font-bold text-slate-800">Front & Back</h4>
-              <p className="text-sm text-slate-500 mt-1">Capture both sides for complete extraction.</p>
+              <h4 className="font-bold text-slate-800">Graphics Extraction</h4>
+              <p className="text-sm text-slate-500 mt-1">Automatic cropping of logos and portrait photos.</p>
             </div>
             <div className="text-center p-4">
               <div className="text-blue-600 mb-3 flex justify-center">
@@ -112,8 +147,8 @@ const App: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </div>
-              <h4 className="font-bold text-slate-800">Standard vCard</h4>
-              <p className="text-sm text-slate-500 mt-1">Export to your favorite contact manager.</p>
+              <h4 className="font-bold text-slate-800">Rich vCard</h4>
+              <p className="text-sm text-slate-500 mt-1">Export contacts with embedded profile images.</p>
             </div>
           </div>
         )}
